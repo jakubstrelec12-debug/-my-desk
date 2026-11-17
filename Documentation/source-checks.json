@@ -1,0 +1,11 @@
+{
+  "swift_files_parsed": 16,
+  "swift_syntax_errors": [],
+  "shell_syntax": "pass",
+  "plist": "pass",
+  "assets": "pass",
+  "linux_build_guard": "pass",
+  "macos_build": "NOT RUN - no macOS SDK or Swift compiler",
+  "xctest": "NOT RUN - requires macOS",
+  "native_integration_tests": "NOT RUN"
+}

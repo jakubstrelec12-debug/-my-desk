@@ -1,0 +1,37 @@
+name: MY DESK macOS application
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Native tests and app packaging
+        run: bash scripts/build-app.sh
+      - name: Verify arm64 executable
+        run: |
+          file 'dist/MY DESK.app/Contents/MacOS/MyDesk'
+          lipo -verify_arch arm64 'dist/MY DESK.app/Contents/MacOS/MyDesk'
+      - name: Launch packaged application and capture its window
+        run: |
+          mkdir -p dist/smoke
+          'dist/MY DESK.app/Contents/MacOS/MyDesk' --smoke-test "$PWD/dist/smoke"
+          test -s dist/smoke/dashboard.png
+          test -s dist/smoke/smoke.json
+      - name: Archive app preserving permissions
+        run: ditto -c -k --keepParent 'dist/MY DESK.app' dist/MyDesk-app.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MY-DESK-macOS
+          if-no-files-found: ignore
+          path: |
+            dist/MyDesk.dmg
+            dist/MyDesk-app.zip
+            dist/smoke/

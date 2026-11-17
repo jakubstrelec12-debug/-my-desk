@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleName</key><string>MY DESK</string>
+<key>CFBundleDisplayName</key><string>MY DESK</string>
+<key>CFBundleIdentifier</key><string>cz.mydesk.dashboard</string>
+<key>CFBundleExecutable</key><string>MyDesk</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleShortVersionString</key><string>1.0.0</string>
+<key>CFBundleVersion</key><string>1</string>
+<key>LSMinimumSystemVersion</key><string>13.0</string>
+<key>NSHighResolutionCapable</key><true/>
+<key>CFBundleIconFile</key><string>MyDesk</string>
+<key>CFBundleDevelopmentRegion</key><string>cs</string>
+<key>CFBundleLocalizations</key><array><string>cs</string></array>
+<key>CFBundleURLTypes</key><array><dict>
+<key>CFBundleURLName</key><string>Microsoft OAuth callback</string>
+<key>CFBundleURLSchemes</key><array><string>mydesk</string></array>
+<key>CFBundleTypeRole</key><string>Viewer</string>
+</dict></array>
+</dict></plist>

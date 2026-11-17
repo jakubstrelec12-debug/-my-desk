@@ -1,0 +1,48 @@
+{
+  "checked_at": "2026-11-17T19:45:08.767651+00:00",
+  "environment": "Linux x86_64; Python HTTP/schema smoke checks, not native app tests",
+  "results": [
+    {
+      "name": "weather",
+      "url": "https://api.open-meteo.com/v1/forecast?latitude=49.144&longitude=15.003&current=temperature_2m,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=6",
+      "http": 200,
+      "bytes": 745,
+      "validation": "current + 6 daily entries"
+    },
+    {
+      "name": "geo",
+      "url": "https://geocoding-api.open-meteo.com/v1/search?name=Praha&count=2&language=cs",
+      "http": 200,
+      "bytes": 628,
+      "validation": "location results"
+    },
+    {
+      "name": "Česká republika",
+      "url": "https://servis.idnes.cz/rss.aspx?c=zpravodaj",
+      "http": 200,
+      "bytes": 50680,
+      "validation": "30 RSS items"
+    },
+    {
+      "name": "Ekonomika",
+      "url": "https://servis.idnes.cz/rss.aspx?c=ekonomika",
+      "http": 200,
+      "bytes": 48021,
+      "validation": "30 RSS items"
+    },
+    {
+      "name": "Technologie",
+      "url": "https://www.root.cz/rss/clanky/",
+      "http": 200,
+      "bytes": 8476,
+      "validation": "10 RSS items"
+    },
+    {
+      "name": "Sport",
+      "url": "https://servis.idnes.cz/rss.aspx?c=sport",
+      "http": 200,
+      "bytes": 46569,
+      "validation": "30 RSS items"
+    }
+  ]
+}

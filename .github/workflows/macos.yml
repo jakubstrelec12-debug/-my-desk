@@ -17,7 +17,7 @@ jobs:
       - name: Verify arm64 executable
         run: |
           file 'dist/MY DESK.app/Contents/MacOS/MyDesk'
-          lipo -verify_arch arm64 'dist/MY DESK.app/Contents/MacOS/MyDesk'
+          lipo 'dist/MY DESK.app/Contents/MacOS/MyDesk' -verify_arch arm64
       - name: Launch packaged application and capture its window
         run: |
           mkdir -p dist/smoke

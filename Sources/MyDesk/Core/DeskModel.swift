@@ -6,6 +6,19 @@ import Combine
     let preferences: Preferences
     let auth: MicrosoftAuth
     let graph: GraphService
+    @Published var connectingExchange = false
+    @Published var exchangeIdentity: String?
+    @Published var exchangeError: String?
+    private var exchangeService: ExchangeService?
+    var exchangeSettings: ExchangeSettings { config.exchange ?? ExchangeSettings() }
+    var usesExchange: Bool { exchangeSettings.enabled }
+    var exchangeConnected: Bool { exchangeService != nil && exchangeIdentity == exchangeSettings.identityKey }
+    var mailConnected: Bool { usesExchange ? exchangeConnected : auth.connected }
+    var mailEnabled: Bool { usesExchange ? exchangeSettings.mail : config.microsoft.mail }
+    var calendarEnabled: Bool { usesExchange ? exchangeSettings.calendar : config.microsoft.calendar }
+    var usesRemoteTasks: Bool { !usesExchange && config.microsoft.tasks }
+    var mailURL: String { usesExchange ? exchangeSettings.webmail : "https://outlook.office.com/mail/" }
+    var calendarURL: String { usesExchange ? exchangeSettings.webmail : "https://outlook.office.com/calendar/" }
     @Published var messages: [MailMessage] = []
     @Published var events: [CalendarEvent] = []
     @Published var tasks: [RemoteTask] = []
@@ -36,10 +49,16 @@ import Combine
     init(preferences: Preferences, auth: MicrosoftAuth) {
         self.preferences = preferences; self.auth = auth; graph = GraphService(auth: auth)
         lastConfig = preferences.config
+        do {
+            if let credential = try ExchangeKeychain.read(), credential.identity == exchangeSettings.identityKey {
+                exchangeService = try ExchangeService(settings: exchangeSettings, password: credential.password)
+                exchangeIdentity = credential.identity
+            }
+        } catch { exchangeError = error.localizedDescription }
         preferences.$config.dropFirst().debounce(for: .milliseconds(600), scheduler: RunLoop.main).sink { [weak self] config in
             guard let self else { return }
             let old = self.lastConfig; self.lastConfig = config
-            if old.microsoft != config.microsoft {
+            if old.microsoft != config.microsoft || old.exchange != config.exchange {
                 self.epoch += 1; self.clearMicrosoft()
                 for key in ["mail", "calendar", "tasks", "profile"] { self.lastAttempt[key] = nil }
             }
@@ -114,6 +133,7 @@ import Combine
         catch { if generation == epoch { errors[key] = error.localizedDescription } }
     }
     func refreshMicrosoft(force: Bool = false) async {
+        if usesExchange { await refreshExchange(force: force); return }
         guard auth.connected else { return }
         let settings = config.microsoft, generation = epoch
         await module("profile", force: force) {
@@ -145,6 +165,52 @@ import Combine
             }
         }
     }
+    func connectExchange(_ settings: ExchangeSettings, password: String) async {
+        guard !connectingExchange else { return }
+        connectingExchange = true; exchangeError = nil
+        defer { connectingExchange = false }
+        let generation = epoch
+        do {
+            let service = try ExchangeService(settings: settings, password: password)
+            _ = try await service.unreadCount()
+            guard generation == epoch else { throw DeskError("Nastavení se během přihlašování změnilo. Připoj účet znovu.") }
+            try ExchangeKeychain.write(.init(identity: settings.identityKey, password: password))
+            var saved = settings; saved.enabled = true
+            preferences.config.exchange = saved
+            // Update immediately, avoiding a delayed settings callback clearing new results.
+            lastConfig = preferences.config
+            epoch += 1; clearMicrosoft()
+            exchangeService = service; exchangeIdentity = saved.identityKey
+            await refreshExchange(force: true)
+        } catch { exchangeError = error.localizedDescription }
+    }
+    func disconnectExchange() {
+        do {
+            try ExchangeKeychain.delete()
+            exchangeService = nil; exchangeIdentity = nil; exchangeError = nil
+            epoch += 1; clearMicrosoft()
+        } catch { exchangeError = error.localizedDescription }
+    }
+    private func refreshExchange(force: Bool = false) async {
+        guard exchangeConnected, let service = exchangeService else { return }
+        let settings = exchangeSettings, generation = epoch
+        profile = Profile(displayName: settings.email.isEmpty ? settings.username : settings.email,
+                          userPrincipalName: settings.username, mail: settings.email)
+        if settings.mail, config.visibleWidgets.contains("mail") {
+            let filter = mailFilter
+            await module("mail", force: force) {
+                let m = try await service.messages(filter: filter)
+                let count = try await service.unreadCount()
+                if generation == epoch, filter == mailFilter { messages = m; unread = count }
+            }
+        }
+        if settings.calendar, config.visibleWidgets.contains("calendar") {
+            await module("calendar", force: force) {
+                let e = try await service.events()
+                if generation == epoch { events = e }
+            }
+        }
+    }
     func changeFilter(_ value: String) {
         mailFilter = value; messages = []; lastAttempt["mail"] = nil
         Task {
@@ -166,7 +232,7 @@ import Combine
     func addTask(_ title: String) async {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !title.isEmpty else { return }
-        if config.microsoft.tasks {
+        if usesRemoteTasks {
             guard auth.connected, !taskListID.isEmpty else { alert = "Připoj Microsoft účet a vyber dostupný seznam úkolů."; return }
             do { try await graph.createTask(title, settings: config.microsoft, list: taskListID); await refreshMicrosoft(force: true) }
             catch { alert = error.localizedDescription }

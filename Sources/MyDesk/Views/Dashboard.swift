@@ -52,7 +52,7 @@ import AppKit
             Button { Task { await model.refreshAll() } } label: { Image(systemName: "arrow.clockwise").font(.system(size: 20)) }.help("Obnovit všechny widgety")
             Button { model.settingsOpen = true } label: { Image(systemName: "gearshape").font(.system(size: 23)) }.help("Nastavení ⌘,")
             Menu {
-                Text(model.profile?.displayName ?? "Microsoft není připojen")
+                Text(model.profile?.displayName ?? "E-mail není připojen")
                 Button("Nastavení účtu") { model.settingsOpen = true }
                 Button("Skrýt do menu baru") { NSApp.hide(nil) }
                 Button("Celá obrazovka") { NSApp.keyWindow?.toggleFullScreen(nil) }

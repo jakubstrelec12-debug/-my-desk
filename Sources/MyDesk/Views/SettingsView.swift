@@ -12,9 +12,11 @@ import ServiceManagement
     @State private var weatherError: String?
     @State private var searching = false
     @State private var mailbox = ""
+    @State private var exchangeDraft = ExchangeSettings()
+    @State private var exchangePassword = ""
     @State private var loginError: String?
     @State private var loginStatus = SMAppService.mainApp.status
-    let tabs = ["Obecné", "Microsoft", "Aplikace", "ESO9", "Projekty", "Počasí", "Zprávy", "Widgety"]
+    let tabs = ["Obecné", "Exchange", "Microsoft", "Aplikace", "ESO9", "Projekty", "Počasí", "Zprávy", "Widgety"]
     var body: some View {
         VStack(spacing: 0) {
             HStack { Text("Nastavení MY DESK").font(.title2.bold()); Spacer(); Button("Hotovo") { dismiss() }.keyboardShortcut(.cancelAction) }.padding(20)
@@ -24,6 +26,7 @@ import ServiceManagement
                 ScrollView {
                     Form {
                         switch tab ?? "Obecné" {
+                        case "Exchange": exchange
                         case "Microsoft": microsoft
                         case "Aplikace": applications
                         case "ESO9": eso9
@@ -37,6 +40,7 @@ import ServiceManagement
                 }
             }
         }.background(Color(nsColor: .windowBackgroundColor))
+        .onAppear { exchangeDraft = prefs.config.exchange ?? ExchangeSettings() }
     }
     @ViewBuilder var general: some View {
         Section("Osobní nastavení") {
@@ -63,6 +67,48 @@ import ServiceManagement
             Text("Skryté widgety se neobnovují. Při skrytém hlavním okně se automatické aktualizace pozastaví.").font(.caption).foregroundStyle(.secondary)
         }
     }
+    @ViewBuilder var exchange: some View {
+        Section("Vlastní firemní Exchange") {
+            Text("Připoj firemní poštu a kalendář stejnými údaji jako do webmailu. Application ID ani Tenant ID nepotřebuješ.").font(.callout)
+            TextField("EWS adresa serveru", text: $exchangeDraft.endpoint)
+            TextField("E-mailová adresa", text: $exchangeDraft.email)
+            TextField("Přihlašovací jméno", text: $exchangeDraft.username)
+            Text("Jméno zadej přesně jako ve webmailu: e-mail, jméno nebo DOMÉNA\\jméno podle firemního účtu.").font(.caption).foregroundStyle(.secondary)
+            SecureField("Heslo", text: $exchangePassword)
+            Picker("Ověřování", selection: $exchangeDraft.authentication) {
+                Text("Basic přes HTTPS").tag("basic")
+                Text("NTLM").tag("ntlm")
+            }
+            Toggle("Číst doručenou poštu a vlaječky", isOn: $exchangeDraft.mail)
+            Toggle("Číst kalendář", isOn: $exchangeDraft.calendar)
+            HStack {
+                Button(model.connectingExchange ? "Ověřuji připojení…" : "Ověřit a připojit") {
+                    let settings = exchangeDraft, password = exchangePassword
+                    Task {
+                        await model.connectExchange(settings, password: password)
+                        if model.exchangeError == nil { exchangePassword = ""; exchangeDraft = model.exchangeSettings }
+                    }
+                }.disabled(model.connectingExchange || exchangePassword.isEmpty || exchangeDraft.username.isEmpty)
+                if model.exchangeConnected {
+                    Button("Odpojit a smazat uložené heslo", role: .destructive) { model.disconnectExchange(); exchangePassword = "" }
+                }
+            }
+            if model.exchangeConnected {
+                Label("Připojeno: " + model.exchangeSettings.username, systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+            }
+            if let error = model.exchangeError { Text(error).foregroundStyle(.orange).textSelection(.enabled) }
+            if let error = model.errors["mail"], model.usesExchange { Text(error).foregroundStyle(.orange).textSelection(.enabled) }
+            if let error = model.errors["calendar"], model.usesExchange { Text(error).foregroundStyle(.orange).textSelection(.enabled) }
+            Text("Heslo se po úspěšném ověření uloží pouze do Klíčenky tohoto Macu. Certifikát serveru se ověřuje standardním zabezpečením macOS.").font(.caption).foregroundStyle(.secondary)
+        }.disabled(model.connectingExchange)
+        Section("Zobrazení na dashboardu") {
+            Toggle("Používat firemní Exchange místo Microsoft 365", isOn: Binding(get: { prefs.config.exchange?.enabled ?? false }, set: {
+                var settings = prefs.config.exchange ?? exchangeDraft; settings.enabled = $0; prefs.config.exchange = settings
+            }))
+            Text("Exchange zobrazuje nejvýše 30 zpráv z Doručené pošty, včetně filtrů Nepřečtené a S vlaječkou, a nejvýše 60 událostí v příštích 7 dnech. Otevření položky vede do firemního webmailu. Úkoly v tomto režimu zůstávají místní na Macu.").font(.caption).foregroundStyle(.secondary)
+            Text("Po změně serveru, jména nebo přepínačů klikni znovu na Ověřit a připojit. Heslo se nikam neposílá mimo zadaný Exchange server.").font(.caption).foregroundStyle(.secondary)
+        }.disabled(model.connectingExchange)
+    }
     @ViewBuilder var microsoft: some View {
         Section("Microsoft 365 / Exchange Online") {
             TextField("Application (client) ID", text: $prefs.config.microsoft.clientID)
@@ -81,7 +127,7 @@ import ServiceManagement
             if let profile = model.profile { Text("Připojeno: \(profile.displayName) · \(profile.mail ?? profile.userPrincipalName ?? "")").foregroundStyle(.green) }
             if let error = auth.error { Text(error).foregroundStyle(.orange).textSelection(.enabled) }
             if let error = model.errors["profile"] { Text(error).foregroundStyle(.orange) }
-            Text("Lokální Exchange není přes Graph podporován. V takovém případě používej Outlook; MY DESK neobchází firemní autentizaci. Firemní správce může vyžadovat schválení aplikace nebo blokovat vlastní klienty zásadami Conditional Access.").font(.caption).foregroundStyle(.secondary)
+            Text("Vlastní firemní Exchange připojíš v záložce Exchange. Tato záložka je pro Microsoft 365 / Exchange Online. Firemní přihlášení může vyžadovat schválení aplikace.").font(.caption).foregroundStyle(.secondary)
             Link("Registrace desktopové aplikace – dokumentace Microsoft", destination: URL(string: "https://learn.microsoft.com/en-us/entra/identity-platform/scenario-desktop-app-configuration")!)
         }
         if prefs.config.microsoft.sharedMail {

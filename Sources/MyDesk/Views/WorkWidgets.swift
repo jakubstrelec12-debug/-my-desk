@@ -55,15 +55,15 @@ import SwiftUI
         GlassPanel(title: model.calendarUpcoming ? "Nadcházející plán" : "Dnešní plán", icon: "calendar", action: { model.calendarUpcoming.toggle() }, actionTitle: model.calendarUpcoming ? "Dnes" : "7 dní") {
             VStack(alignment: .leading, spacing: 9) {
                 ServiceStatus(key: "calendar") { Task { await model.refreshMicrosoft(force: true) } }
-                if !auth.connected || !prefs.config.microsoft.calendar {
-                    EmptyWidget(title: "Připoj firemní kalendář", detail: "Schůzky z Microsoft 365 se zobrazí po přihlášení.", action: { model.settingsOpen = true })
+                if !model.mailConnected || !model.calendarEnabled {
+                    EmptyWidget(title: "Připoj firemní kalendář", detail: "Schůzky z Microsoft 365 nebo firemního Exchange se zobrazí po přihlášení.", action: { model.settingsOpen = true })
                 } else if model.shownEvents.isEmpty && !model.loading.contains("calendar") {
                     EmptyWidget(symbol: "calendar.badge.checkmark", title: "Volný prostor v plánu", detail: model.errors["calendar"] == nil ? "V načteném období nejsou žádné odpovídající události." : "Kalendář nyní není dostupný.")
                 } else {
                     ScrollView {
                         VStack(spacing: 8) {
                             ForEach(Array(model.shownEvents.enumerated()), id: \.element.id) { index, event in
-                                Button { model.open(event.webLink ?? "https://outlook.office.com/calendar/") } label: {
+                                Button { model.open(event.webLink ?? model.calendarURL) } label: {
                                     HStack(alignment: .top, spacing: 9) {
                                         Text(event.isAllDay == true ? "Celý\nden" : (Date.graph(event.start.dateTime)?.czech("HH:mm") ?? "—"))
                                             .font(.system(size: 11, weight: .medium)).monospacedDigit().frame(width: 37, alignment: .leading).padding(.top, 10)
@@ -80,7 +80,7 @@ import SwiftUI
                                 }.buttonStyle(.plain)
                                 .contextMenu {
                                     if let join = event.onlineMeeting?.joinUrl { Button("Připojit ke schůzce") { model.open(join) } }
-                                    Button("Otevřít v kalendáři") { model.open(event.webLink ?? "https://outlook.office.com/calendar/") }
+                                    Button("Otevřít v kalendáři") { model.open(event.webLink ?? model.calendarURL) }
                                 }
                             }
                         }
@@ -104,8 +104,8 @@ import SwiftUI
     var body: some View {
         GlassPanel(title: "Úkoly", icon: "checkmark.circle", action: { adding = true }) {
             VStack(alignment: .leading, spacing: 9) {
-                Text(prefs.config.microsoft.tasks ? "Microsoft To Do" : "Místní úkoly · pouze tento Mac").font(.system(size: 10)).foregroundStyle(.secondary)
-                if prefs.config.microsoft.tasks {
+                Text(model.usesRemoteTasks ? "Microsoft To Do" : "Místní úkoly · pouze tento Mac").font(.system(size: 10)).foregroundStyle(.secondary)
+                if model.usesRemoteTasks {
                     ServiceStatus(key: "tasks") { Task { await model.refreshMicrosoft(force: true) } }
                     if model.tasks.isEmpty {
                         EmptyWidget(symbol: "checkmark.circle", title: model.auth.connected ? "Žádné otevřené úkoly" : "Připoj Microsoft To Do", detail: "Nový úkol přidáš tlačítkem +.", action: model.auth.connected ? nil : { model.settingsOpen = true })
@@ -158,7 +158,7 @@ import SwiftUI
     @EnvironmentObject var prefs: Preferences
     @EnvironmentObject var auth: MicrosoftAuth
     var body: some View {
-        GlassPanel(title: "E-maily (Outlook)", icon: "envelope", action: { model.open("https://outlook.office.com/mail/") }, actionTitle: "Otevřít") {
+        GlassPanel(title: "E-maily (Outlook)", icon: "envelope", action: { model.open(model.mailURL) }, actionTitle: "Otevřít") {
             VStack(alignment: .leading, spacing: 9) {
                 HStack {
                     ForEach([("all", "Vše"), ("unread", "Nepřečtené\(model.unread.map { " \($0)" } ?? "")"), ("flagged", "S vlaječkou")], id: \.0) { filter in
@@ -167,7 +167,7 @@ import SwiftUI
                         }.buttonStyle(.plain)
                     }
                     Spacer(minLength: 0)
-                    if prefs.config.microsoft.sharedMail {
+                    if !model.usesExchange && prefs.config.microsoft.sharedMail {
                         Picker("Schránka", selection: $prefs.config.microsoft.mailbox) {
                             Text("Moje schránka").tag("")
                             ForEach(prefs.config.microsoft.mailboxes, id: \.self) { Text($0).tag($0) }
@@ -175,15 +175,15 @@ import SwiftUI
                     }
                 }
                 ServiceStatus(key: "mail") { Task { await model.refreshMicrosoft(force: true) } }
-                if !auth.connected || !prefs.config.microsoft.mail {
-                    EmptyWidget(symbol: "envelope.badge", title: "Připoj svůj pracovní e-mail", detail: "Microsoft 365 / Exchange Online. Přihlašovací údaje zůstávají v Klíčence macOS.", actionTitle: "Připojit Microsoft", action: { model.settingsOpen = true })
+                if !model.mailConnected || !model.mailEnabled {
+                    EmptyWidget(symbol: "envelope.badge", title: "Připoj svůj pracovní e-mail", detail: "Microsoft 365 nebo vlastní firemní Exchange. Připojení nastavíš v příslušné záložce nastavení.", actionTitle: "Nastavit připojení", action: { model.settingsOpen = true })
                 } else if model.filteredMail.isEmpty && !model.loading.contains("mail") {
-                    EmptyWidget(symbol: "tray", title: model.errors["mail"] == nil ? "Žádné odpovídající zprávy" : "E-maily nyní nejsou dostupné", detail: "Změň filtr nebo obnov data. Vlaječky se hledají v celé schránce.")
+                    EmptyWidget(symbol: "tray", title: model.errors["mail"] == nil ? "Žádné odpovídající zprávy" : "E-maily nyní nejsou dostupné", detail: model.usesExchange ? "Změň filtr nebo obnov data. Exchange prohledává Doručenou poštu včetně vlaječek." : "Změň filtr nebo obnov data. Vlaječky se hledají v celé schránce.")
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(model.filteredMail) { mail in
-                                Button { model.open(mail.webLink ?? "https://outlook.office.com/mail/") } label: {
+                                Button { model.open(mail.webLink ?? model.mailURL) } label: {
                                     HStack(alignment: .top, spacing: 13) {
                                         Image(systemName: mail.flag?.flagStatus == "flagged" ? "flag.fill" : "circle.fill")
                                             .font(.system(size: mail.flag?.flagStatus == "flagged" ? 17 : 10))
@@ -206,7 +206,7 @@ import SwiftUI
                         }
                     }
                 }
-                HStack { LastUpdated(key: "mail"); Spacer(); Text(model.mailFilter == "flagged" ? "Nejvýše 30 zpráv · celá schránka" : "Nejvýše 30 zpráv · Doručená pošta").font(.system(size: 9)).foregroundStyle(.secondary) }
+                HStack { LastUpdated(key: "mail"); Spacer(); Text(model.mailFilter == "flagged" && !model.usesExchange ? "Nejvýše 30 zpráv · celá schránka" : "Nejvýše 30 zpráv · Doručená pošta").font(.system(size: 9)).foregroundStyle(.secondary) }
             }
         }
     }

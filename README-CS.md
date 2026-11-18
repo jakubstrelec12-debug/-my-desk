@@ -1,3 +1,13 @@
+## Firemní Exchange (od verze 1.1)
+
+V Nastavení → Exchange zadejte EWS adresu serveru, e-mail, přihlašovací jméno přesně jako ve webmailu a heslo. Zvolte Basic přes HTTPS, případně NTLM, a klikněte na Ověřit a připojit. Není potřeba registrace Microsoft Entra ani Application ID. Heslo se uloží do Klíčenky macOS až po úspěšném ověření schránky; není součástí nastavení, instalátoru ani repozitáře.
+
+Dashboard načítá nejvýše 30 zpráv z Doručené pošty, včetně nepřečtených zpráv a vlaječek, počet nepřečtených zpráv a nejvýše 60 událostí na 7 dní. Kalendář používá CalendarView i pro výskyty opakovaných schůzek. V této verzi se vlaječky nehledají v dalších složkách a archivních schránkách. Kliknutí otevře položku ve firemním webmailu. Exchange nepodporuje Microsoft To Do; úkoly v tomto režimu zůstávají místní. Poštu ani kalendář tato integrace nemění.
+
+Odpojení smaže uložené heslo. Přepínačem lze zachovat připojení a přepnout mezi Exchange a původním Microsoft 365. Při změně hesla nebo nastavení se znovu připojte. Připojení vyžaduje platný HTTPS certifikát a odmítá přesměrování. Po odmítnutém přihlášení se automatické pokusy zastaví, aby se neopakovalo nesprávné heslo.
+
+Ověření: automatické testy ověřují SOAP, české znaky, migraci nastavení, filtry, chyby serveru, odmítání přesměrování a zastavení opakovaných požadavků po HTTP 401. Přihlášení ke konkrétní firemní schránce vyžaduje místní zadání hesla uživatelem a není součástí testů na GitHubu.
+
 # MY DESK pro macOS
 
 Nativní osobní dashboard ve SwiftUI pro macOS 13 a novější, včetně Apple Silicon. Zdrojový projekt z 17. listopadu 2026.

@@ -95,6 +95,8 @@ struct Configuration: Codable {
     var esoManager = ""
     var esoSupport = "https://podpora.eso.cz/"
     var microsoft = MicrosoftSettings()
+    // Optional for compatibility with settings saved by version 1.0.
+    var exchange: ExchangeSettings?
 }
 struct GraphPage<T: Decodable>: Decodable {
     let value: [T]
@@ -194,5 +196,33 @@ extension Date {
         if let date = f.date(from: value) { return date }
         f.formatOptions = [.withInternetDateTime]
         return f.date(from: value)
+    }
+}
+
+struct ExchangeSettings: Codable, Equatable {
+    var enabled = false
+    var endpoint = "https://webmail.eso9.cz/EWS/Exchange.asmx"
+    var username = ""
+    var email = ""
+    var authentication = "basic"
+    var mail = true
+    var calendar = true
+    var identityKey: String { "\(endpoint)|\(username)|\(authentication)" }
+    func validatedURL() throws -> URL {
+        guard let u = URL(string: endpoint), u.scheme?.lowercased() == "https",
+              let host = u.host, !host.isEmpty, u.user == nil, u.password == nil,
+              u.query == nil, u.fragment == nil, !u.path.isEmpty,
+              ["basic", "ntlm"].contains(authentication),
+              !username.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !username.contains(":"), !username.contains("\n"), !username.contains("\r") else {
+            throw DeskError("Vyplň HTTPS adresu EWS a přihlašovací jméno. Adresa nesmí obsahovat heslo ani parametry.")
+        }
+        return u
+    }
+    var webmail: String {
+        guard let u = URL(string: endpoint), u.scheme == "https", u.host != nil else { return "" }
+        var c = URLComponents(url: u, resolvingAgainstBaseURL: false)
+        c?.path = "/owa/"; c?.query = nil; c?.fragment = nil; c?.user = nil; c?.password = nil
+        return c?.url?.absoluteString ?? ""
     }
 }

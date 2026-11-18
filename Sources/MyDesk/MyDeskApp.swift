@@ -73,22 +73,26 @@ import AppKit
                           let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
                         throw DeskError("Smoke test: nelze zachytit obsah okna.")
                     }
-                    guard abs(view.bounds.width - requestedSize.width) < 2, abs(view.bounds.height - requestedSize.height) < 2 else {
-                        throw DeskError("Smoke test: aplikace nerespektuje požadovanou velikost okna.")
-                    }
                     view.cacheDisplay(in: view.bounds, to: bitmap)
                     guard let png = bitmap.representation(using: .png, properties: [:]) else {
                         throw DeskError("Smoke test: nelze vytvořit PNG.")
                     }
                     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
                     try png.write(to: output.appendingPathComponent("dashboard.png"))
+                    guard abs(view.bounds.width - requestedSize.width) < 2, abs(view.bounds.height - requestedSize.height) < 2 else {
+                        throw DeskError("Smoke test: skutečné okno \(view.bounds.width)x\(view.bounds.height), požadováno \(requestedSize.width)x\(requestedSize.height).")
+                    }
                     let report: [String: Any] = ["status": "passed", "resourceBundle": Bundle.deskResources.bundleURL.path, "windowWidth": view.bounds.width,
                         "windowHeight": view.bounds.height, "macOS": ProcessInfo.processInfo.operatingSystemVersionString,
                         "note": "Packaged native app launched and rendered; authenticated integrations are not tested."]
                     try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted])
                         .write(to: output.appendingPathComponent("smoke.json"))
                     NSApp.terminate(nil)
-                } catch { fputs("Smoke test failed: \(error.localizedDescription)\n", stderr); exit(1) }
+                } catch {
+                    try? FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+                    try? error.localizedDescription.write(to: output.appendingPathComponent("smoke-error.txt"), atomically: true, encoding: .utf8)
+                    fputs("Smoke test failed: \(error.localizedDescription)\n", stderr); exit(1)
+                }
             }
         }
         if !didApplyFullScreen, preferences.config.fullScreen {

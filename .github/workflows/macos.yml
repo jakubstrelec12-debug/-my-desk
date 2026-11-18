@@ -35,12 +35,21 @@ jobs:
           for SIZE in 1480x890 1024x720 960x680 768x820; do
             TARGET="$OUTPUT/$SIZE"
             mkdir -p "$TARGET"
-            open -n -W "$INSTALLED/MY DESK.app" --args --smoke-test "$TARGET" --smoke-size "$SIZE" &
+            open -n -W --stdout "$TARGET/launch.log" --stderr "$TARGET/launch.log" "$INSTALLED/MY DESK.app" --args --smoke-test "$TARGET" --smoke-size "$SIZE" &
             LAUNCH_PID=$!
             for attempt in {1..60}; do
-              if test -s "$TARGET/smoke.json"; then break; fi
+              if test -s "$TARGET/smoke.json" || test -s "$TARGET/smoke-error.txt"; then break; fi
+              if ! kill -0 "$LAUNCH_PID" 2>/dev/null; then break; fi
               sleep 1
             done
+            if ! test -s "$TARGET/smoke.json"; then
+              cat "$TARGET/launch.log" || true
+              cat "$TARGET/smoke-error.txt" || true
+              screencapture -x "$TARGET/desktop.png" || true
+              shopt -s nullglob
+              for REPORT in "$HOME/Library/Logs/DiagnosticReports/"*MyDesk*.ips; do cp "$REPORT" "$TARGET/"; done
+              exit 1
+            fi
             test -s "$TARGET/dashboard.png"
             test -s "$TARGET/smoke.json"
             wait "$LAUNCH_PID"

@@ -9,7 +9,7 @@ struct DashboardLayout {
     var inset: CGFloat { compact ? 12 : 24 }
     var headerHeight: CGFloat { compact ? 42 : 52 }
     var contentWidth: CGFloat { max(0, width - inset * 2) }
-    var contentHeight: CGFloat { max(compact ? 590 : 720, height - inset * 2 - headerHeight - gap) }
+    var contentHeight: CGFloat { max(compact ? 550 : 720, height - inset * 2 - headerHeight - gap) }
     var columns: Int { width >= 960 ? 3 : width >= 680 ? 2 : 1 }
     var leftWidth: CGFloat { columns == 1 ? contentWidth : (contentWidth - gap * CGFloat(columns - 1)) * (columns == 3 ? 0.25 : 0.34) }
     var centerWidth: CGFloat { columns == 1 ? contentWidth : (contentWidth - gap * CGFloat(columns - 1)) * (columns == 3 ? 0.48 : 0.66) }

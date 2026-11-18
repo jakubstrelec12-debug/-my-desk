@@ -23,10 +23,10 @@ import SwiftUI
         Button(action: action) {
             HStack(spacing: compact ? 8 : 13) {
                 Image(systemName: icon).font(.system(size: compact ? 18 : 21)).frame(width: compact ? 22 : 26)
-                VStack(alignment: .leading, spacing: 2) { Text(title).font(.system(size: 12, weight: .semibold)); Text(detail).font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1) }
+                VStack(alignment: .leading, spacing: 2) { Text(title).font(.system(size: 12, weight: .semibold)); if !compact { Text(detail).font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1) } }
                 Spacer(minLength: 0); Image(systemName: "arrow.up.right.square").font(.system(size: 13))
             }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, compact ? 4 : 6).contentShape(Rectangle())
-        }.buttonStyle(.plain)
+        }.buttonStyle(.plain).help(detail)
     }
 }
 @MainActor struct ProjectsWidget: View {

@@ -106,7 +106,7 @@ extension EnvironmentValues {
     let app: LaunchItem
     var body: some View {
         Button { model.launch(app) } label: {
-            VStack(spacing: 5) {
+            VStack(spacing: compact ? 3 : 5) {
                 if let url = Launcher.appURL(app) {
                     Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().interpolation(.high).frame(width: compact ? 32 : 45, height: compact ? 32 : 45)
                 } else if app.name == "ESO9" {

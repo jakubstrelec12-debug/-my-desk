@@ -109,13 +109,13 @@ import SwiftUI
                         if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
                     }
                     context.stroke(path, with: .linearGradient(Gradient(colors: [.blue, .purple]), startPoint: .zero, endPoint: CGPoint(x: size.width, y: 0)), lineWidth: 1.6)
-                }.frame(height: compact ? 20 : 40)
-                Text(model.history.count < 2 ? "CPU: čekám na další měření…" : "CPU · posledních \(model.history.count) měření").font(.system(size: 9)).foregroundStyle(.secondary)
+                }.frame(height: compact ? 12 : 40)
+                if !compact { Text(model.history.count < 2 ? "CPU: čekám na další měření…" : "CPU · posledních \(model.history.count) měření").font(.system(size: 9)).foregroundStyle(.secondary) }
             }
         }
     }
     func ring(_ value: Double?, title: String, symbol: String, color: Color) -> some View {
-        VStack(spacing: 6) {
+        VStack(spacing: compact ? 4 : 6) {
             ZStack {
                 Circle().stroke(color.opacity(0.2), lineWidth: 6)
                 Circle().trim(from: 0, to: CGFloat(value ?? 0)).stroke(color.gradient, style: StrokeStyle(lineWidth: 6, lineCap: .round)).rotationEffect(.degrees(-90))

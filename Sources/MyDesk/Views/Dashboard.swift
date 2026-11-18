@@ -107,7 +107,7 @@ import AppKit
         [("Přehled", "house.fill"), ("ESO9", "square.3.layers.3d"), ("Projekty", "folder"), ("Kalendář", "calendar"), ("Nástroje", "square.grid.2x2")]
     }
     @ViewBuilder private func leftColumn(_ layout: DashboardLayout) -> some View {
-        let weights: [(String, CGFloat)] = [("greeting", 0.16), ("launcher", 0.25), ("eso9", 0.33), ("projects", 0.26)]
+        let weights: [(String, CGFloat)] = [("greeting", 0.18), ("launcher", 0.28), ("eso9", 0.32), ("projects", 0.22)]
         VStack(spacing: layout.gap) {
             if visible("greeting") { GreetingWidget().frame(height: layout.panelHeight("greeting", weights: weights, visible: prefs.config.visibleWidgets)) }
             if visible("launcher") {
@@ -146,7 +146,7 @@ import AppKit
         }
     }
     @ViewBuilder private func rightColumn(_ layout: DashboardLayout, horizontal: Bool = false) -> some View {
-        let weights: [(String, CGFloat)] = [("weather", 0.36), ("news", 0.37), ("system", 0.27)]
+        let weights: [(String, CGFloat)] = [("weather", 0.39), ("news", 0.33), ("system", 0.28)]
         if horizontal {
             HStack(alignment: .top, spacing: layout.gap) {
                 if visible("weather") { WeatherWidget().frame(maxWidth: .infinity) }

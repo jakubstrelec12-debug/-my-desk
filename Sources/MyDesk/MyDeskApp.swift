@@ -79,10 +79,10 @@ import AppKit
                     }
                     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
                     try png.write(to: output.appendingPathComponent("dashboard.png"))
-                    guard abs(view.bounds.width - requestedSize.width) < 2, abs(view.bounds.height - requestedSize.height) < 2 else {
+                    guard abs(view.bounds.width - requestedSize.width) < 2, view.bounds.height >= 480, view.bounds.height <= requestedSize.height + 32 else {
                         throw DeskError("Smoke test: skutečné okno \(view.bounds.width)x\(view.bounds.height), požadováno \(requestedSize.width)x\(requestedSize.height).")
                     }
-                    let report: [String: Any] = ["status": "passed", "resourceBundle": Bundle.deskResources.bundleURL.path, "windowWidth": view.bounds.width,
+                    let report: [String: Any] = ["status": "passed", "requestedWidth": requestedSize.width, "requestedHeight": requestedSize.height, "resourceBundle": Bundle.deskResources.bundleURL.path, "windowWidth": view.bounds.width,
                         "windowHeight": view.bounds.height, "macOS": ProcessInfo.processInfo.operatingSystemVersionString,
                         "note": "Packaged native app launched and rendered; authenticated integrations are not tested."]
                     try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted])

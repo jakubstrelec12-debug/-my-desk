@@ -6,8 +6,8 @@
 <key>CFBundleIdentifier</key><string>cz.mydesk.dashboard</string>
 <key>CFBundleExecutable</key><string>MyDesk</string>
 <key>CFBundlePackageType</key><string>APPL</string>
-<key>CFBundleShortVersionString</key><string>1.1.0</string>
-<key>CFBundleVersion</key><string>2</string>
+<key>CFBundleShortVersionString</key><string>1.2.0</string>
+<key>CFBundleVersion</key><string>3</string>
 <key>LSMinimumSystemVersion</key><string>13.0</string>
 <key>NSHighResolutionCapable</key><true/>
 <key>CFBundleIconFile</key><string>MyDesk</string>
@@ -18,4 +18,6 @@
 <key>CFBundleURLSchemes</key><array><string>mydesk</string></array>
 <key>CFBundleTypeRole</key><string>Viewer</string>
 </dict></array>
+<key>NSLocationUsageDescription</key><string>MY DESK použije polohu Macu pro místní počasí. Historii polohy neukládá.</string>
+<key>NSLocationWhenInUseUsageDescription</key><string>MY DESK použije polohu Macu pro místní počasí.</string>
 </dict></plist>

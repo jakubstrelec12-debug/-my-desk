@@ -5,7 +5,7 @@ let package = Package(
     products: [.executable(name: "MyDesk", targets: ["MyDesk"])],
     targets: [
         .executableTarget(name: "MyDesk", resources: [.process("Resources")],
-            linkerSettings: [.linkedFramework("AppKit"), .linkedFramework("Security"), .linkedFramework("IOKit"), .linkedFramework("ServiceManagement"), .linkedFramework("AuthenticationServices")]),
+            linkerSettings: [.linkedFramework("AppKit"), .linkedFramework("CoreLocation"), .linkedFramework("Security"), .linkedFramework("IOKit"), .linkedFramework("ServiceManagement"), .linkedFramework("AuthenticationServices")]),
         .testTarget(name: "MyDeskTests", dependencies: ["MyDesk"])
     ], swiftLanguageVersions: [.v5]
 )

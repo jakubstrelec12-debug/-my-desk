@@ -1,18 +1,26 @@
 import SwiftUI
 
 @MainActor struct WeatherWidget: View {
+    @Environment(\.compactDashboard) var compact
     @EnvironmentObject var model: DeskModel
     @EnvironmentObject var prefs: Preferences
     var body: some View {
         GlassPanel(title: model.location?.name ?? "Počasí", icon: "cloud.sun.fill", action: { model.settingsOpen = true }, actionTitle: "Lokalita") {
             VStack(alignment: .leading, spacing: 8) {
                 ServiceStatus(key: "weather") { Task { await model.refreshWeather(force: true) } }
+                if prefs.config.weatherFollowsLocation == true {
+                    HStack(spacing: 4) {
+                        Image(systemName: model.locationNotice == nil ? "location.fill" : "location.slash")
+                        Text(model.locationNotice == nil ? "Poloha Macu" : "Uložené město · poloha nedostupná")
+                    }.font(.system(size: 10)).foregroundStyle(model.locationNotice == nil ? Color.secondary : Color.orange)
+                        .lineLimit(1).help(model.locationNotice ?? "Počasí podle aktuální polohy Macu.")
+                }
                 if let weather = model.weather {
-                    HStack(spacing: 20) {
+                    HStack(spacing: compact ? 9 : 20) {
                         Image(systemName: WeatherReport.symbol(weather.current.weather_code, day: weather.current.is_day == 1))
-                            .symbolRenderingMode(.multicolor).font(.system(size: 58)).frame(width: 90)
+                            .symbolRenderingMode(.multicolor).font(.system(size: compact ? 40 : 58)).frame(width: compact ? 55 : 90)
                         VStack(alignment: .leading, spacing: 1) {
-                            Text("\(Int(weather.current.temperature_2m.rounded())) °C").font(.system(size: 40, weight: .semibold))
+                            Text("\(Int(weather.current.temperature_2m.rounded())) °C").font(.system(size: compact ? 30 : 40, weight: .semibold))
                             Text(WeatherReport.description(weather.current.weather_code)).font(.system(size: 13))
                         }
                         Spacer(minLength: 0)
@@ -40,6 +48,7 @@ import SwiftUI
     }
 }
 @MainActor struct NewsWidget: View {
+    @Environment(\.compactDashboard) var compact
     @EnvironmentObject var model: DeskModel
     var body: some View {
         GlassPanel(title: "Aktuální zprávy", icon: "newspaper", action: { model.settingsOpen = true }, actionTitle: "Zdroje") {
@@ -56,7 +65,7 @@ import SwiftUI
                             ForEach(model.filteredArticles.prefix(30)) { article in
                                 Button { model.open(article.url) } label: {
                                     HStack(alignment: .top, spacing: 11) {
-                                        Image(systemName: symbol(article.category)).font(.system(size: 25)).foregroundStyle(color(article.category)).frame(width: 54, height: 48)
+                                        Image(systemName: symbol(article.category)).font(.system(size: compact ? 20 : 25)).foregroundStyle(color(article.category)).frame(width: compact ? 32 : 54, height: compact ? 36 : 48)
                                             .background(color(article.category).opacity(0.17), in: RoundedRectangle(cornerRadius: 7))
                                         VStack(alignment: .leading, spacing: 6) {
                                             Text(article.title).font(.system(size: 12, weight: .semibold)).lineLimit(2)
@@ -81,11 +90,12 @@ import SwiftUI
     }
 }
 @MainActor struct SystemWidget: View {
+    @Environment(\.compactDashboard) var compact
     @EnvironmentObject var model: DeskModel
     var body: some View {
         GlassPanel(title: SystemMetrics.hardwareModel(), icon: "laptopcomputer", action: { model.section = "Nástroje" }, actionTitle: "Stav systému") {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: compact ? 7 : 12) {
+                HStack(spacing: compact ? 6 : 10) {
                     ring(model.metrics.battery, title: "Baterie", symbol: model.metrics.charging ? "battery.100.bolt" : "battery.100", color: .green)
                     ring(model.metrics.memory, title: "RAM", symbol: "memorychip", color: .blue)
                     ring(model.metrics.cpu, title: "CPU", symbol: "cpu", color: .purple)
@@ -99,7 +109,7 @@ import SwiftUI
                         if i == 0 { path.move(to: point) } else { path.addLine(to: point) }
                     }
                     context.stroke(path, with: .linearGradient(Gradient(colors: [.blue, .purple]), startPoint: .zero, endPoint: CGPoint(x: size.width, y: 0)), lineWidth: 1.6)
-                }.frame(height: 40)
+                }.frame(height: compact ? 20 : 40)
                 Text(model.history.count < 2 ? "CPU: čekám na další měření…" : "CPU · posledních \(model.history.count) měření").font(.system(size: 9)).foregroundStyle(.secondary)
             }
         }
@@ -110,9 +120,9 @@ import SwiftUI
                 Circle().stroke(color.opacity(0.2), lineWidth: 6)
                 Circle().trim(from: 0, to: CGFloat(value ?? 0)).stroke(color.gradient, style: StrokeStyle(lineWidth: 6, lineCap: .round)).rotationEffect(.degrees(-90))
                 Image(systemName: symbol).font(.system(size: 20)).foregroundStyle(color)
-            }.frame(maxWidth: 62).aspectRatio(1, contentMode: .fit)
-            Text(value.map { "\(Int(($0 * 100).rounded())) %" } ?? "—").font(.system(size: 19, weight: .semibold)).monospacedDigit()
-            Text(title).font(.system(size: 11))
+            }.frame(maxWidth: compact ? 34 : 62).aspectRatio(1, contentMode: .fit)
+            Text(value.map { "\(Int(($0 * 100).rounded())) %" } ?? "—").font(.system(size: compact ? 14 : 19, weight: .semibold)).monospacedDigit()
+            Text(title).font(.system(size: compact ? 10 : 11))
         }.frame(maxWidth: .infinity).accessibilityElement(children: .combine)
     }
 }

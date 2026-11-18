@@ -45,6 +45,11 @@ import ServiceManagement
     @ViewBuilder var general: some View {
         Section("Osobní nastavení") {
             TextField("Oslovení", text: $prefs.config.displayName)
+            Picker("Rozložení dashboardu", selection: Binding(get: { prefs.config.dashboardLayout ?? "auto" }, set: { prefs.config.dashboardLayout = $0 })) {
+                Text("Automatické podle okna").tag("auto")
+                Text("Kompaktní · tablet").tag("compact")
+                Text("Prostorné").tag("comfortable")
+            }
             Picker("Vzhled", selection: $prefs.config.appearance) { Text("Tmavý").tag("dark"); Text("Světlý").tag("light"); Text("Podle systému").tag("system") }
             HStack { Text("Krytí panelů"); Slider(value: $prefs.config.opacity, in: 0.75...0.98); Text("\(Int(prefs.config.opacity * 100)) %") }
             Toggle("Při zavření okna skrýt do menu baru", isOn: $prefs.config.hideOnClose)
@@ -212,7 +217,17 @@ import ServiceManagement
         }
     }
     @ViewBuilder var weather: some View {
-        Section("Lokality") {
+        Section("Počasí podle polohy") {
+            Toggle("Používat aktuální polohu Macu", isOn: Binding(get: { prefs.config.weatherFollowsLocation == true }, set: { prefs.config.weatherFollowsLocation = $0 }))
+            Text("Tablet je druhý monitor, proto se používá poloha Macu. macOS si při prvním zapnutí vyžádá oprávnění. Poloha slouží pouze k načtení počasí; aplikace neukládá historii pohybu.").font(.caption).foregroundStyle(.secondary)
+            if prefs.config.weatherFollowsLocation == true {
+                if let location = model.detectedLocation { Label(location.name, systemImage: "location.fill") }
+                if let notice = model.locationNotice { Text(notice).font(.caption).foregroundStyle(.orange).textSelection(.enabled) }
+                Button("Zjistit polohu a obnovit počasí") { Task { await model.refreshWeather(force: true) } }.disabled(model.loading.contains("weather"))
+            }
+            Text("Pokud poloha není dostupná nebo ji nepovolíš, zobrazí se níže vybrané uložené město.").font(.caption).foregroundStyle(.secondary)
+        }
+        Section("Uložené lokality a záložní město") {
             Picker("Zobrazovat", selection: Binding(get: { prefs.config.selectedLocation ?? prefs.config.locations.first?.id }, set: { prefs.config.selectedLocation = $0 })) {
                 ForEach(prefs.config.locations) { Text($0.name).tag(Optional($0.id)) }
             }

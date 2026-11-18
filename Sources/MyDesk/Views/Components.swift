@@ -1,9 +1,18 @@
 import SwiftUI
 import AppKit
 
+private struct CompactDashboardKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    var compactDashboard: Bool {
+        get { self[CompactDashboardKey.self] }
+        set { self[CompactDashboardKey.self] = newValue }
+    }
+}
+
 @MainActor struct GlassPanel<Content: View>: View {
     @EnvironmentObject var prefs: Preferences
     @Environment(\.colorScheme) var scheme
+    @Environment(\.compactDashboard) var compact
     var title: String
     var icon: String
     var orange = false
@@ -11,24 +20,24 @@ import AppKit
     var actionTitle: String = ""
     @ViewBuilder var content: () -> Content
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 9) {
+        VStack(alignment: .leading, spacing: compact ? 8 : 12) {
+            HStack(spacing: compact ? 6 : 9) {
                 if orange {
-                    Text("eso").font(.system(size: 22, weight: .bold)).foregroundStyle(.white)
-                        .frame(width: 45, height: 33).background(.orange.gradient, in: RoundedRectangle(cornerRadius: 9))
-                } else { Image(systemName: icon).font(.system(size: 23, weight: .regular)).foregroundStyle(icon == "star.fill" ? Color.yellow : .primary) }
-                Text(title).font(.system(size: 18, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                    Text("eso").font(.system(size: compact ? 18 : 22, weight: .bold)).foregroundStyle(.white)
+                        .frame(width: compact ? 33 : 45, height: compact ? 27 : 33).background(.orange.gradient, in: RoundedRectangle(cornerRadius: 9))
+                } else { Image(systemName: icon).font(.system(size: compact ? 19 : 23, weight: .regular)).foregroundStyle(icon == "star.fill" ? Color.yellow : .primary) }
+                Text(title).font(.system(size: compact ? 15 : 18, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.8)
                 Spacer(minLength: 2)
                 if let action {
                     Button(action: action) {
                         if actionTitle.isEmpty { Image(systemName: "plus.circle.fill").font(.system(size: 24)).symbolRenderingMode(.hierarchical) }
-                        else { Text(actionTitle).font(.system(size: 11, weight: .medium)); Image(systemName: "chevron.right").font(.system(size: 10)) }
+                        else { if !compact || actionTitle.count <= 5 { Text(actionTitle).font(.system(size: 11, weight: .medium)).lineLimit(1) }; Image(systemName: "chevron.right").font(.system(size: 10)) }
                     }.buttonStyle(.plain).help(actionTitle.isEmpty ? "Přidat" : actionTitle)
                 }
             }
-            content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            content().frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading).clipped()
         }
-        .padding(16)
+        .padding(compact ? 11 : 16)
         .background {
             RoundedRectangle(cornerRadius: 17).fill(.ultraThinMaterial)
             RoundedRectangle(cornerRadius: 17).fill(
@@ -42,16 +51,17 @@ import AppKit
     }
 }
 @MainActor struct EmptyWidget: View {
+    @Environment(\.compactDashboard) var compact
     var symbol = "link.badge.plus"
     let title: String
     let detail: String
     var actionTitle = "Nastavit"
     var action: (() -> Void)?
     var body: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            Image(systemName: symbol).font(.system(size: 24)).foregroundStyle(.secondary)
-            Text(title).font(.system(size: 14, weight: .semibold))
-            Text(detail).font(.system(size: 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+        VStack(alignment: .leading, spacing: compact ? 6 : 9) {
+            Image(systemName: symbol).font(.system(size: compact ? 20 : 24)).foregroundStyle(.secondary)
+            Text(title).font(.system(size: compact ? 12 : 14, weight: .semibold))
+            Text(detail).font(.system(size: compact ? 11 : 12)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             if let action { Button(actionTitle, action: action).buttonStyle(.bordered).controlSize(.small) }
         }.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
@@ -91,19 +101,20 @@ import AppKit
     }
 }
 @MainActor struct AppTile: View {
+    @Environment(\.compactDashboard) var compact
     @EnvironmentObject var model: DeskModel
     let app: LaunchItem
     var body: some View {
         Button { model.launch(app) } label: {
             VStack(spacing: 5) {
                 if let url = Launcher.appURL(app) {
-                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().interpolation(.high).frame(width: 45, height: 45)
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().interpolation(.high).frame(width: compact ? 32 : 45, height: compact ? 32 : 45)
                 } else if app.name == "ESO9" {
-                    Text("eso").font(.system(size: 25, weight: .bold)).foregroundStyle(.white).frame(width: 43, height: 43).background(.orange.gradient, in: RoundedRectangle(cornerRadius: 10))
+                    Text("eso").font(.system(size: compact ? 20 : 25, weight: .bold)).foregroundStyle(.white).frame(width: compact ? 32 : 43, height: compact ? 32 : 43).background(.orange.gradient, in: RoundedRectangle(cornerRadius: 10))
                 } else {
-                    Image(systemName: "app.dashed").font(.system(size: 30)).foregroundStyle(.secondary).frame(width: 45, height: 45)
+                    Image(systemName: "app.dashed").font(.system(size: 30)).foregroundStyle(.secondary).frame(width: compact ? 32 : 45, height: compact ? 32 : 45)
                 }
-                Text(app.name).font(.system(size: 11)).lineLimit(1)
+                Text(app.name).font(.system(size: compact ? 10 : 11)).lineLimit(1)
             }.frame(maxWidth: .infinity).contentShape(Rectangle())
         }.buttonStyle(.plain).help("Spustit \(app.name)")
     }

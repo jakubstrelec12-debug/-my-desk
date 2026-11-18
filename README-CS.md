@@ -1,3 +1,11 @@
+## Verze 1.2 – tablet a aktuální poloha
+
+Dashboard automaticky přizpůsobuje šířky a výšky panelů velikosti okna, včetně tabletu použitého jako monitor Macu. Na displejích od 960 bodů používá tři sloupce; v užším okně přeskupí panely do dvou nebo jednoho sloupce. U malých oken je zachované svislé posouvání, nevynucuje se původní šířka 1200 bodů. Uvnitř seznamů lze nadále posouvat poštu, zprávy a projekty.
+
+V horním menu s ikonou rozložení nebo Nastavení → Obecné lze zvolit Automatické, Kompaktní · tablet nebo Prostorné rozložení. Pro plochu bez okrajů okna použijte celou obrazovku (Control + Command + F).
+
+Počasí podle aktuální polohy zapněte v Nastavení → Počasí → Používat aktuální polohu Macu a potvrďte systémové oprávnění. Používá se poloha Macu, protože tablet je pouze druhý monitor. Aplikace neukládá historii polohy. Souřadnice se předají službě Open-Meteo pro načtení místního počasí a systémovému geokódování pro název místa. Poloha se zjišťuje při obnovování počasí a je nejvýše 15 minut sdílena v paměti. Pokud není dostupná nebo povolená, použije se vybrané uložené město s upozorněním v panelu.
+
 ## Firemní Exchange (od verze 1.1)
 
 V Nastavení → Exchange zadejte EWS adresu serveru, e-mail, přihlašovací jméno přesně jako ve webmailu a heslo. Zvolte Basic přes HTTPS, případně NTLM, a klikněte na Ověřit a připojit. Není potřeba registrace Microsoft Entra ani Application ID. Heslo se uloží do Klíčenky macOS až po úspěšném ověření schránky; není součástí nastavení, instalátoru ani repozitáře.

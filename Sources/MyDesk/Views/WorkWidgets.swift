@@ -1,11 +1,12 @@
 import SwiftUI
 
 @MainActor struct ESO9Widget: View {
+    @Environment(\.compactDashboard) var compact
     @EnvironmentObject var model: DeskModel
     @EnvironmentObject var prefs: Preferences
     var body: some View {
         GlassPanel(title: "ESO9 – pracovní centrum", icon: "square.3.layers.3d", orange: true) {
-            VStack(spacing: 0) {
+            ScrollView { VStack(spacing: 0) {
                 link("Zákaznické aplikace", detail: "Instalace a prostředí ESO9", icon: "desktopcomputer") { model.section = "ESO9" }
                 Divider()
                 link("ESO9 Správce", detail: prefs.config.esoManager.isEmpty ? "Nastav vzdálený přístup do Windows" : "Otevřít nastavené vzdálené připojení", icon: "gearshape") {
@@ -15,16 +16,16 @@ import SwiftUI
                 link("Technická Wiki", detail: "wiki.eso9.cz – návody a integrace", icon: "book") { model.open("https://wiki.eso9.cz") }
                 Divider()
                 link("Podpora ESO9", detail: "Zákaznický portál a požadavky", icon: "headphones") { model.open(prefs.config.esoSupport) }
-            }
+            } }
         }
     }
     func link(_ title: String, detail: String, icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 13) {
-                Image(systemName: icon).font(.system(size: 21)).frame(width: 26)
+            HStack(spacing: compact ? 8 : 13) {
+                Image(systemName: icon).font(.system(size: compact ? 18 : 21)).frame(width: compact ? 22 : 26)
                 VStack(alignment: .leading, spacing: 2) { Text(title).font(.system(size: 12, weight: .semibold)); Text(detail).font(.system(size: 9)).foregroundStyle(.secondary).lineLimit(1) }
                 Spacer(minLength: 0); Image(systemName: "arrow.up.right.square").font(.system(size: 13))
-            }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, 6).contentShape(Rectangle())
+            }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, compact ? 4 : 6).contentShape(Rectangle())
         }.buttonStyle(.plain)
     }
 }

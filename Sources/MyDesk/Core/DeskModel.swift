@@ -25,7 +25,11 @@ import Combine
     @Published var lists: [TodoList] = []
     @Published var profile: Profile?
     @Published var unread: Int?
+    @Published var detectedLocation: WeatherLocation?
+    @Published var locationNotice: String?
     @Published var weather: WeatherReport?
+    private let currentLocation = CurrentLocationService()
+    private var weatherEpoch = 0
     @Published var articles: [Article] = []
     @Published var metrics = MetricSample()
     @Published var history: [Double] = []
@@ -62,7 +66,8 @@ import Combine
                 self.epoch += 1; self.clearMicrosoft()
                 for key in ["mail", "calendar", "tasks", "profile"] { self.lastAttempt[key] = nil }
             }
-            if old.locations != config.locations || old.selectedLocation != config.selectedLocation {
+            if old.locations != config.locations || old.selectedLocation != config.selectedLocation || old.weatherFollowsLocation != config.weatherFollowsLocation {
+                self.weatherEpoch += 1; self.detectedLocation = nil; self.locationNotice = nil
                 self.weather = nil; self.lastAttempt["weather"] = nil
             }
             if old.newsSources != config.newsSources { self.articles = []; self.lastAttempt["news"] = nil }
@@ -70,7 +75,10 @@ import Combine
         }.store(in: &subscriptions)
     }
     var config: Configuration { preferences.config }
-    var location: WeatherLocation? { config.locations.first { $0.id == config.selectedLocation } ?? config.locations.first }
+    var location: WeatherLocation? {
+        if config.weatherFollowsLocation == true, let detectedLocation { return detectedLocation }
+        return config.locations.first { $0.id == config.selectedLocation } ?? config.locations.first
+    }
     var taskListID: String { lists.first { $0.id == config.microsoft.taskList }?.id ?? lists.first { $0.wellknownListName == "defaultList" }?.id ?? lists.first?.id ?? "" }
     var filteredMail: [MailMessage] { messages.filter { search.isEmpty || [$0.subject, $0.bodyPreview, $0.from?.emailAddress.name].compactMap { $0 }.joined(separator: " ").localizedCaseInsensitiveContains(search) } }
     var filteredArticles: [Article] { articles.filter { (category == "Vše" || $0.category == category) && (search.isEmpty || $0.title.localizedCaseInsensitiveContains(search)) } }
@@ -105,14 +113,26 @@ import Combine
     }
     func refreshWeather(force: Bool = false) async {
         guard config.visibleWidgets.contains("weather"), !busy.contains("weather"), force || due("weather", max(10, config.weatherMinutes) * 60) else { return }
-        guard let location else { errors["weather"] = "Přidej lokalitu v nastavení."; return }
         busy.insert("weather"); loading.insert("weather"); lastAttempt["weather"] = Date()
+        let generation = weatherEpoch
         defer { busy.remove("weather"); loading.remove("weather") }
+        if config.weatherFollowsLocation == true {
+            do {
+                let found = try await currentLocation.locate()
+                guard generation == weatherEpoch else { return }
+                detectedLocation = found; locationNotice = nil
+            } catch {
+                guard generation == weatherEpoch else { return }
+                detectedLocation = nil
+                locationNotice = error.localizedDescription + " Zobrazuji uložené město."
+            }
+        }
+        guard let location else { errors["weather"] = "Přidej lokalitu v nastavení."; return }
         do {
             let report = try await WeatherService.load(location)
-            guard self.location?.id == location.id else { return }
+            guard generation == weatherEpoch, self.location?.id == location.id else { return }
             weather = report; errors["weather"] = nil; updated["weather"] = Date()
-        } catch { errors["weather"] = error.localizedDescription }
+        } catch { if generation == weatherEpoch { errors["weather"] = error.localizedDescription } }
     }
     func refreshNews(force: Bool = false) async {
         guard config.visibleWidgets.contains("news"), !busy.contains("news"), force || due("news", max(10, config.newsMinutes) * 60) else { return }

@@ -32,15 +32,19 @@ jobs:
           mv "$PWD/.build" "$RUNNER_TEMP/mydesk-build-hidden"
           codesign --verify --strict --verbose=2 "$INSTALLED/MY DESK.app"
           cd "$RUNNER_TEMP"
-          open -n -W "$INSTALLED/MY DESK.app" --args --smoke-test "$OUTPUT" &
-          LAUNCH_PID=$!
-          for attempt in {1..60}; do
-            if test -s "$OUTPUT/smoke.json"; then break; fi
-            sleep 1
+          for SIZE in 1480x890 1024x720 960x680 768x820; do
+            TARGET="$OUTPUT/$SIZE"
+            mkdir -p "$TARGET"
+            open -n -W "$INSTALLED/MY DESK.app" --args --smoke-test "$TARGET" --smoke-size "$SIZE" &
+            LAUNCH_PID=$!
+            for attempt in {1..60}; do
+              if test -s "$TARGET/smoke.json"; then break; fi
+              sleep 1
+            done
+            test -s "$TARGET/dashboard.png"
+            test -s "$TARGET/smoke.json"
+            wait "$LAUNCH_PID"
           done
-          test -s "$OUTPUT/dashboard.png"
-          test -s "$OUTPUT/smoke.json"
-          wait "$LAUNCH_PID"
       - name: Archive app preserving permissions
         run: ditto -c -k --keepParent 'dist/MY DESK.app' dist/MyDesk-app.zip
       - uses: actions/upload-artifact@v4

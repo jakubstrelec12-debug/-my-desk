@@ -55,7 +55,13 @@ import AppKit
            ProcessInfo.processInfo.arguments.indices.contains(flag + 1), !smokeScheduled {
             smokeScheduled = true
             let output = URL(fileURLWithPath: ProcessInfo.processInfo.arguments[flag + 1], isDirectory: true)
-            window.setContentSize(NSSize(width: 1480, height: 890))
+            let args = ProcessInfo.processInfo.arguments
+            var requestedSize = NSSize(width: 1480, height: 890)
+            if let index = args.firstIndex(of: "--smoke-size"), args.indices.contains(index + 1) {
+                let parts = args[index + 1].split(separator: "x").compactMap { Double($0) }
+                if parts.count == 2 { requestedSize = NSSize(width: parts[0], height: parts[1]) }
+            }
+            window.setContentSize(requestedSize)
             window.makeKeyAndOrderFront(nil)
             DispatchQueue.main.asyncAfter(deadline: .now() + 18) {
                 do {
@@ -66,6 +72,9 @@ import AppKit
                     guard let view = window.contentView,
                           let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
                         throw DeskError("Smoke test: nelze zachytit obsah okna.")
+                    }
+                    guard abs(view.bounds.width - requestedSize.width) < 2, abs(view.bounds.height - requestedSize.height) < 2 else {
+                        throw DeskError("Smoke test: aplikace nerespektuje požadovanou velikost okna.")
                     }
                     view.cacheDisplay(in: view.bounds, to: bitmap)
                     guard let png = bitmap.representation(using: .png, properties: [:]) else {

@@ -97,6 +97,8 @@ struct Configuration: Codable {
     var microsoft = MicrosoftSettings()
     // Optional for compatibility with settings saved by version 1.0.
     var exchange: ExchangeSettings?
+    var dashboardLayout: String?
+    var weatherFollowsLocation: Bool?
 }
 struct GraphPage<T: Decodable>: Decodable {
     let value: [T]

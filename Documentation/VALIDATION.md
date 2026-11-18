@@ -1,3 +1,9 @@
+## Aktualizace 1.1 – přímý Exchange
+
+Přidána integrace EWS pro vlastní Exchange, Basic přes HTTPS nebo NTLM, heslo pouze v Klíčence. Nové testy v ExchangeTests.swift pokrývají migraci konfigurace, SOAP odpovědi, filtry, kalendářní okno, odmítnutí chybných odpovědí a přesměrování a zastavení pokusů po HTTP 401. Spuštění balíčku se ověřuje z kopie DMG po znepřístupnění složky sestavení. Skutečné přihlášení do firemního Exchange zůstává k místnímu ověření uživatelem.
+
+Následující záznam popisuje původní stav verze 1.0 před aktualizacemi.
+
 # Stav ověření při předání
 
 Datum: 17. 11. 2026. Prostředí: Linux x86_64, bez Swift kompilátoru, bez macOS SDK a bez Xcode. Nejde o protokol o úspěšném macOS vydání.

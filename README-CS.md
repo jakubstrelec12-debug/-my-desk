@@ -49,7 +49,7 @@ Pro kompletní ověření přihlašovacího callbacku a automatického spuštěn
 
 ## Připojení Microsoft účtu
 
-Potřebuješ firemní účet s poštou v Exchange Online. Lokální Exchange, včetně starého hybridního REST přístupu, není implementovaný: Microsoft tuto cestu v červenci 2023 ukončil. Outlook můžeš spouštět i bez Graph integrace.
+Pro toto připojení přes Microsoft Graph potřebuješ účet v Exchange Online. Pro vlastní firemní Exchange použij novou záložku Exchange popsanou na začátku tohoto návodu.
 
 1. V Microsoft Entra admin center otevři **App registrations → New registration**. Pro vlastní firemní instalaci zvol účty jen v dané organizaci.
 2. V **Authentication → Add a platform → Mobile and desktop applications** přidej vlastní redirect URI přesně:

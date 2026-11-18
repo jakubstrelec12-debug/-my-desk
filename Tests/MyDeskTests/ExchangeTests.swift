@@ -77,7 +77,7 @@ final class ExchangeTests: XCTestCase {
         }
         XCTAssertTrue(called)
     }
-    func testFailedAuthenticationStopsAutomaticRetries() async throws {
+    @MainActor func testFailedAuthenticationStopsAutomaticRetries() async throws {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [DeniedExchangeProtocol.self]
         let service = try ExchangeService(settings: settings(), password: "test-only", configuration: configuration)

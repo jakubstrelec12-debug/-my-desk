@@ -1,5 +1,4 @@
 import Foundation
-import FoundationXML
 import Security
 
 struct ExchangeCredential: Codable {
@@ -65,7 +64,7 @@ final class ExchangeTransport: NSObject, URLSessionTaskDelegate, @unchecked Send
     }
 }
 
-final class ExchangeService {
+@MainActor final class ExchangeService {
     let settings: ExchangeSettings
     private let session: URLSession
     private let transport: ExchangeTransport
@@ -81,12 +80,12 @@ final class ExchangeService {
         session = URLSession(configuration: configuration, delegate: transport, delegateQueue: nil)
     }
     deinit { session.invalidateAndCancel() }
-    static func escape(_ raw: String) -> String {
+    nonisolated static func escape(_ raw: String) -> String {
         raw.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;")
             .replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;")
             .replacingOccurrences(of: "'", with: "&apos;")
     }
-    static func envelope(_ operation: String) -> Data {
+    nonisolated static func envelope(_ operation: String) -> Data {
         Data("""
         <?xml version="1.0" encoding="utf-8"?>
         <s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" xmlns:m="http://schemas.microsoft.com/exchange/services/2006/messages" xmlns:t="http://schemas.microsoft.com/exchange/services/2006/types">
@@ -144,7 +143,7 @@ final class ExchangeService {
         guard let value = response.first("UnreadCount"), let count = Int(value) else { throw DeskError("Exchange nevrátil počet nepřečtených zpráv.") }
         return count
     }
-    static func mailOperation(filter: String) -> String {
+    nonisolated static func mailOperation(filter: String) -> String {
         var restriction = ""
         if filter == "unread" { restriction = "<m:Restriction><t:IsEqualTo><t:FieldURI FieldURI=\"message:IsRead\"/><t:FieldURIOrConstant><t:Constant Value=\"false\"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction>" }
         if filter == "flagged" { restriction = "<m:Restriction><t:IsEqualTo><t:ExtendedFieldURI PropertyTag=\"0x1090\" PropertyType=\"Integer\"/><t:FieldURIOrConstant><t:Constant Value=\"2\"/></t:FieldURIOrConstant></t:IsEqualTo></m:Restriction>" }
@@ -157,7 +156,7 @@ final class ExchangeService {
     func messages(filter: String) async throws -> [MailMessage] {
         try await request(Self.mailOperation(filter: filter)).messages(webmail: settings.webmail)
     }
-    static func calendarOperation(start: Date, end: Date) -> String {
+    nonisolated static func calendarOperation(start: Date, end: Date) -> String {
         let f = ISO8601DateFormatter()
         let fields = ["item:Subject", "calendar:Start", "calendar:End", "calendar:IsAllDayEvent"]
             .map { "<t:FieldURI FieldURI=\"\($0)\"/>" }.joined()

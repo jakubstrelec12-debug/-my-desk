@@ -85,7 +85,7 @@ import AppKit
 @MainActor struct DeskBackground: View {
     var body: some View {
         GeometryReader { geo in
-            Image("Mountains", bundle: .module).resizable().scaledToFill().frame(width: geo.size.width, height: geo.size.height).clipped()
+            Image("Mountains", bundle: .deskResources).resizable().scaledToFill().frame(width: geo.size.width, height: geo.size.height).clipped()
             LinearGradient(colors: [.black.opacity(0.05), Color(red: 0.03, green: 0.07, blue: 0.16).opacity(0.38)], startPoint: .top, endPoint: .bottom)
         }.ignoresSafeArea()
     }

@@ -104,7 +104,7 @@ import AppKit
     @EnvironmentObject var model: DeskModel
     var body: some View {
         HStack(spacing: 14) {
-            Image("Mountains", bundle: .module).resizable().scaledToFill().frame(width: 83, height: 89).clipShape(Circle()).overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 1))
+            Image("Mountains", bundle: .deskResources).resizable().scaledToFill().frame(width: 83, height: 89).clipShape(Circle()).overlay(Circle().stroke(.white.opacity(0.55), lineWidth: 1))
             TimelineView(.periodic(from: .now, by: 30)) { context in
                 VStack(alignment: .leading, spacing: 4) {
                     Text("\(salutation(context.date)), \(prefs.config.displayName)!").font(.system(size: 19, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.7)

@@ -59,6 +59,10 @@ import AppKit
             window.makeKeyAndOrderFront(nil)
             DispatchQueue.main.asyncAfter(deadline: .now() + 18) {
                 do {
+                    guard Bundle.deskResources.url(forResource: "Mountains", withExtension: "png") != nil,
+                          Bundle.deskResources.bundleURL.path.hasPrefix(Bundle.main.bundleURL.path + "/") else {
+                        throw DeskError("Smoke test: obrázky nejsou dostupné uvnitř instalačního balíčku.")
+                    }
                     guard let view = window.contentView,
                           let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
                         throw DeskError("Smoke test: nelze zachytit obsah okna.")
@@ -69,7 +73,7 @@ import AppKit
                     }
                     try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
                     try png.write(to: output.appendingPathComponent("dashboard.png"))
-                    let report: [String: Any] = ["status": "passed", "windowWidth": view.bounds.width,
+                    let report: [String: Any] = ["status": "passed", "resourceBundle": Bundle.deskResources.bundleURL.path, "windowWidth": view.bounds.width,
                         "windowHeight": view.bounds.height, "macOS": ProcessInfo.processInfo.operatingSystemVersionString,
                         "note": "Packaged native app launched and rendered; authenticated integrations are not tested."]
                     try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted])

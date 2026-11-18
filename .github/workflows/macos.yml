@@ -18,12 +18,29 @@ jobs:
         run: |
           file 'dist/MY DESK.app/Contents/MacOS/MyDesk'
           lipo 'dist/MY DESK.app/Contents/MacOS/MyDesk' -verify_arch arm64
-      - name: Launch packaged application and capture its window
+      - name: Launch installed app without access to build resources
         run: |
           mkdir -p dist/smoke
-          'dist/MY DESK.app/Contents/MacOS/MyDesk' --smoke-test "$PWD/dist/smoke"
-          test -s dist/smoke/dashboard.png
-          test -s dist/smoke/smoke.json
+          OUTPUT="$PWD/dist/smoke"
+          MOUNT="$RUNNER_TEMP/mydesk-dmg"
+          INSTALLED="$RUNNER_TEMP/mydesk-installed"
+          mkdir -p "$MOUNT" "$INSTALLED"
+          hdiutil attach dist/MyDesk.dmg -nobrowse -readonly -mountpoint "$MOUNT"
+          ditto "$MOUNT/MY DESK.app" "$INSTALLED/MY DESK.app"
+          hdiutil detach "$MOUNT"
+          # Prevent the generated SwiftPM accessor from masking missing resources.
+          mv "$PWD/.build" "$RUNNER_TEMP/mydesk-build-hidden"
+          codesign --verify --strict --verbose=2 "$INSTALLED/MY DESK.app"
+          cd "$RUNNER_TEMP"
+          open -n -W "$INSTALLED/MY DESK.app" --args --smoke-test "$OUTPUT" &
+          LAUNCH_PID=$!
+          for attempt in {1..60}; do
+            if test -s "$OUTPUT/smoke.json"; then break; fi
+            sleep 1
+          done
+          test -s "$OUTPUT/dashboard.png"
+          test -s "$OUTPUT/smoke.json"
+          wait "$LAUNCH_PID"
       - name: Archive app preserving permissions
         run: ditto -c -k --keepParent 'dist/MY DESK.app' dist/MyDesk-app.zip
       - uses: actions/upload-artifact@v4
